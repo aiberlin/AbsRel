@@ -1,0 +1,14 @@
+(
+	\name: "AbsRel",
+	\path: "AbsRel",
+	\summary: "Support for Absolute Relativity playing style.",
+	\author: "Alberto de Campo, Bruno Gola",
+	\version: 0.1,
+	\organization: "Airborne Instruments / aiberlin",
+	\url: "http://airborneinstruments.eu/",
+	\since: "2024",
+	\dependencies: [
+		"JITLibExtensions", "adclib", "Influx",
+		"Modality-toolkit", "HyperDisCo"
+	]
+)
