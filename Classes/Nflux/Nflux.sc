@@ -107,6 +107,9 @@ Nflux {
 		this.calculateOut;
 	}
 
+	rand {
+		weights = {{1.0.rand2}!nOutputs}!nInputs;
+	}
 	setw { | arrays |
 		if (arrays.shape == weights.shape) {
 			weights = arrays;
