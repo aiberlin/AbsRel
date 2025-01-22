@@ -68,12 +68,13 @@ z.stop;
 */
 
 ControlTable {
-	classvar <all;
+	classvar <all, <>clipboard;
 
 	var <name, <tables, <tdef, <window, key, plots;
 
 	*initClass {
 		all = ();
+		clipboard = nil;
 	}
 
 	*new { arg name, data=#[], nTables=nil;
@@ -98,6 +99,14 @@ ControlTable {
 		ControlTable.all[name] = nil;
 		tdef.clear;
 		window.close;
+	}
+
+	copyTable { arg tableNumber=0;
+		ControlTable.clipboard = tables[tableNumber].copy;
+	}
+
+	pasteTable { arg toTableNumber=0;
+		this.updateValues(toTableNumber, ControlTable.clipboard);
 	}
 
 	init {
@@ -233,18 +242,25 @@ ControlTable {
 				Pen.addRect(Rect(pos, plot.plots[0].plotBounds.top, 10, plot.plots[0].plotBounds.height));
 				Pen.perform(\fill);
 			});
+			plotUserView.keyDownAction = { arg view, char;
+				char.postln;
+				if (char == $c) { this.copyTable(idx) };
+				if (char == $v) { this.pasteTable(idx) };
+			};
 			plotStackView.layout = StackLayout(drawingView, plotUserView).mode_(1).index_(0);
 			window.layout.add(plotStackView);
 			plots = plots ++ [plot];
 		};
 
-		TdefGui(tdef, 11 + (2 * tables.size), window, Rect(0,0,400,400));
+		TdefGui(tdef, 12 + (2 * tables.size), window, Rect(0,0,400,400));
 		window.front;
 	}
 
-	updateValues { |tidx, values|
-		values.do {|value, idx|
-			tables[tidx][idx] = value;
+	updateValues { |tidx, values=#[]|
+		if (values.notEmpty) {
+			values.do {|value, idx|
+				tables[tidx][idx] = value;
+			};
 		};
 		defer { plots[tidx].setValue(tables[tidx]) };
 	}
