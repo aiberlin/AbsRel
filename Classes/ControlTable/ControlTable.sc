@@ -147,7 +147,7 @@ ControlTable {
 			var tablePosName = "t%_pos".format(idx).asSymbol;
 			tableScaleNames = tableScaleNames.add(tableScaleName);
 			tablePosNames = tablePosNames.add(tablePosName);
-			tdef.addSpec(tableScaleName, [0.25,16,\lin,0.25]);
+			tdef.addSpec(tableScaleName, [0,16,5.415]);
 			tdef.set(tableScaleName, 1);
 			tdef.addSpec(tablePosName, [0,1]);
 			tdef.set(tablePosName, 0);
@@ -243,7 +243,6 @@ ControlTable {
 				Pen.perform(\fill);
 			});
 			plotUserView.keyDownAction = { arg view, char;
-				char.postln;
 				if (char == $c) { this.copyTable(idx) };
 				if (char == $v) { this.pasteTable(idx) };
 			};
@@ -252,7 +251,7 @@ ControlTable {
 			plots = plots ++ [plot];
 		};
 
-		TdefGui(tdef, 12 + (2 * tables.size), window, Rect(0,0,400,400));
+		TdefGui(tdef, 14 + (2 * tables.size), window, Rect(0,0,400,400));
 		window.front;
 	}
 
@@ -319,26 +318,37 @@ ControlTable {
 				[index, abs2rel[i].set(tableVals[i]).diff]
 			}.flat);
 		});
-
 	}
 
 	toNTMI { arg influxOffset=3;
+		var oldZoom = 0;
 		if (NTMI.makeInfluxSource(key, \controlTable).isNil) {
 			"NTMI is not running, not doing anything".warn;
 			^this;
 		};
 		tdef.addSpec(\ntmiOffset, [0, NTMI.inphlux.weights[0].size-tables.size,\lin,1]);
+		tdef.addSpec(\zoom, [0,4,2]);
+		tdef.set(\zoom, 0);
 		tdef.set(\ntmiOffset, influxOffset);
 		tdef.set(\tableFunc, { |e, tableVals|
 			var prevTableVals = tdef.getHalo(\prevTableVals);
 			var diffs;
 			// |inIndices, diffs, zoom = 0.5|
+			if (NTMI.at(key).zoom != e.zoom) {
+				if (oldZoom == e.zoom) {
+					e.zoom = NTMI.at(key).zoom;
+				} {
+					NTMI.at(key).zoom = e.zoom;
+				};
+			};
+
 			if (prevTableVals.notNil) {
 				diffs = tableVals - prevTableVals;
 				MKtl(key).set(\dummy, 0.5);
 				MFdef(\setRelInf).value(diffs.size.collect{|idx| e.ntmiOffset+idx}, diffs, NTMI.zoom * NTMI.at(key).zoom);
 			};
 			tdef.addHalo(\prevTableVals, tableVals);
+			oldZoom = e.zoom;
 		});
 	}
 
