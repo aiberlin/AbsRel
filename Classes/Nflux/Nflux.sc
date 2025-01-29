@@ -268,3 +268,38 @@ Nflux {
 		^win;
 	}
 }
+
++NodeProxy {
+	relSet { | ...args |
+		//var diffs=[], keys=[];
+		//var values = [];
+		var keys = [];
+		var values = (args.size/2).asInteger.collect {|idx|
+			var diff, key, spec;
+			//diffs = diffs ++ [args[idx*2+1]];
+			keys = keys ++ [args[idx*2]];
+
+			diff = args[idx*2+1];
+			key = args[idx*2];
+			spec = this.getSpec(key);
+			if (spec.isNil) {
+				"No spec for control key: %".format(key).warn;
+			} {
+				//values = [spec.map(spec.unmap(this.get(key)) + diff)];
+				spec.map(diff + spec.unmap(this.get(key)));
+				//spec.map(spec.unmap(this.get(key)) + diff);
+			};
+		};
+		//values.postln;
+		//keys.postln;
+		//var keys = (args.size/2).asInteger.collect {|idx| args[idx*2]};
+		//var values = keys.collect {|ar,idx|
+		//	var spec = this.getSpec(ar)
+		//	spec.map(spec.unmap(this.get(ar)) + diffs[idx]);//.clip(this.getSpec(ar).minval, this.getSpec(ar).maxval);
+		//};
+
+		//this.set(*(keys +++ values).flatten);
+		//(keys.collect {|key, idx| [key, values[idx]]}.flatten);
+		this.set(*(keys.collect {|key, idx| [key, values[idx]]}.flatten))
+	}
+}
