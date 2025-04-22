@@ -164,7 +164,11 @@ Nflux {
 		relativeAttachedObjects.do {|obj|
 			var zoffset = 0;
 			var params = [];
-			obj.controlKeys.do {|ctrlKey,zdx|
+			var controlKeys = obj.controlKeys;
+			if (obj.object.getHalo(\namesToNflux).notNil) {
+				controlKeys = obj.object.getHalo(\namesToNflux);
+			};
+			controlKeys.do {|ctrlKey,zdx|
 				var ctrlVal = obj.object.get(ctrlKey);
 				var ctrlRelVal;
 				if (ctrlVal.isNumber or: ctrlVal.isArray) {
@@ -228,12 +232,12 @@ Nflux {
 		this.detachMappedRelative(object);
 	}
 
-	gui {
+	gui { arg parent=nil;
 		var vals = nInputs.collect { NfluxAbs2Rel() };
 		//var yval = NfluxAbs2Rel();
 		//var sldrx = 0;
 		//var sldry = 0;
-		var win = Window.new;
+		var win = if (parent.isNil) { Window.new } { parent };
 		var frk;
 		var gui;
 		var zoomSlider = Slider(win).value_(this.inScaler).action_({|slider| this.inScaler = slider.value});
@@ -301,5 +305,11 @@ Nflux {
 		//this.set(*(keys +++ values).flatten);
 		//(keys.collect {|key, idx| [key, values[idx]]}.flatten);
 		this.set(*(keys.collect {|key, idx| [key, values[idx]]}.flatten))
+	}
+}
+
++ProxyChain {
+	relSet { | ...args|
+		proxy.relSet(*args);
 	}
 }
