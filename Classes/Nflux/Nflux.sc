@@ -274,7 +274,7 @@ Nflux {
 }
 
 +NodeProxy {
-	relSet { | ...args |
+	setRel { | ...args |
 		//var diffs=[], keys=[];
 		//var values = [];
 		var keys = [];
@@ -305,6 +305,10 @@ Nflux {
 		//this.set(*(keys +++ values).flatten);
 		//(keys.collect {|key, idx| [key, values[idx]]}.flatten);
 		this.set(*(keys.collect {|key, idx| [key, values[idx]]}.flatten))
+	}
+
+	relSet { | ...args|
+		this.setRel(*args);
 	}
 }
 
