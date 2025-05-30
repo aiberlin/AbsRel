@@ -288,6 +288,10 @@ Nflux {
 			spec = this.getSpec(key);
 			if (spec.isNil) {
 				"No spec for control key: %".format(key).warn;
+				// // could assume linear:
+				// this.get(key) + diff;
+				// safer: leave untouched
+				this.get(key);
 			} {
 				//values = [spec.map(spec.unmap(this.get(key)) + diff)];
 				spec.map(diff + spec.unmap(this.get(key)));
