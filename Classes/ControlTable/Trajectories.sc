@@ -1,5 +1,5 @@
 Trajectories {
-	var action;
+	var <>action;
 
 	*new { arg action;
 		^super.newCopyArgs(action).init;
@@ -142,6 +142,25 @@ Trajectories {
 			};
 			if(obj2.notNil) {
 				obj2.setUni(param2, b[1]);
+			};
+		};
+	}
+
+	mapPairsRel { arg ...pairs;
+		var abs2rel = {NfluxAbs2Rel([0,0])}!9;
+		// pairs of object that accepts the .setUni method + symbol
+		action = {|a, b|
+			var idx = a * 4;
+			var obj1 = pairs[idx];
+			var obj2 = pairs[(idx)+2];
+			var param = pairs[idx+1];
+			var param2 = pairs[idx+3];
+			abs2rel[a].set(b);
+			if(obj1.notNil) {
+				obj1.setRel(param, abs2rel[a].diff[0]);
+			};
+			if(obj2.notNil) {
+				obj2.setRel(param2, abs2rel[a].diff[1]);
 			};
 		};
 	}
