@@ -8,8 +8,8 @@ FluxCoMa {
 
 	makeUpdatedGui { arg gui, func;
 		var frk = fork {
+			var wouldbe;
 			loop {
-				var wouldbe;
 				(1/25).wait;
 				wouldbe = func.value;
 				defer {
