@@ -159,11 +159,12 @@ ControlTable {
 			var keepGoing = true;
 			var oldLoopPos = e.loopPos;
 			var oldLoopDir = e.loopDir;
+			var loopPos, stepsInLoop, increment, tableVals;
+
 			while { keepGoing } {
-				var loopPos = e.loopPos;
-				var stepsInLoop = (e.loopDur / e.loopDT);
-				var increment = stepsInLoop.reciprocal;
-				var tableVals;
+				loopPos = e.loopPos;
+				stepsInLoop = (e.loopDur / e.loopDT);
+				increment = stepsInLoop.reciprocal;
 
 				// do this func on every step
 				e.loopFunc;
