@@ -1,9 +1,9 @@
 FluxCoMa {
-	var nflux;
+	var nflux, submix;
 	var name="FluxCoMa";
 
 	*new { arg nflux;
-		this.newCopyArgs(nflux).init;
+		^this.newCopyArgs(nflux).init;
 	}
 
 	makeUpdatedGui { arg gui, func;
@@ -46,15 +46,20 @@ FluxCoMa {
 		^gui;
 	}
 
+	submix {
+		^submix;
+	}
+
 	init {
-		var defName = "ntmi_flucoma_%".format(name).asSymbol;
+		var defName = "fluxcoma_%".format(name).asSymbol;
 		var submixName = "%_sub".format(defName).asSymbol;
 		var oscPath = "/fluxcoma_%".format(defName).asSymbol;
 		var abs2rel, flux;
 		var gui, colors, visualizerView, square, addProxyView, toProxyView, fluxView, ndefView;
-		var submix = ProxySubmix.new(submixName);
 		var node;
 		var vstack, freqScope, busToFreq;
+		submix = ProxySubmix.new(submixName);
+
 		busToFreq = Bus.audio(Server.default, 1);
 		submix.ar(2);
 		/*
@@ -128,8 +133,8 @@ FluxCoMa {
 		});
 		addProxyView.selection = [];
 		addProxyView.selectionAction = {|lv|
-			var current = submix.proxies.collect {|proxy| proxy.key }.asSet;
-			var selection = lv.selection.collect { |idx| lv.items[idx] }.asSet;
+			var current = submix.proxies.asArray.collect {|proxy| proxy.key }.asSet;
+			var selection = lv.selection.asArray.collect { |idx| lv.items[idx] }.asSet;
 			var toRemove = current - selection;
 			var toAdd = selection - current;
 			toAdd.do {|source|
@@ -156,7 +161,7 @@ FluxCoMa {
 		toProxyView.selection = [];
 		toProxyView.selectionAction = {|lv|
 			var current = flux.relativeAttachedObjects.collect { |obj| obj.object.key }.asSet;
-			var selection = lv.selection.collect { |idx| lv.items[idx] }.asSet;
+			var selection = lv.selection.asArray.collect { |idx| lv.items[idx] }.asSet;
 			var toRemove = current - selection;
 			var toAdd = selection - current;
 			toAdd.do {|source|

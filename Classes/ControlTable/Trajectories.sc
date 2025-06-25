@@ -1,14 +1,14 @@
 Trajectories {
-	var <>action;
+	var <>action, <trajectories, <canvas;
 
 	*new { arg action;
 		^super.newCopyArgs(action).init;
 	}
 
+
 	init {
 		var win = Window.new("Trajectories", Rect(0,0,400, 800));
 		var view = UserView(win, win.view.bounds.insetBy(5,5));
-		var trajectories = {[]}!9;
 		var colors = {Color.rand}!9;
 		var speeds = 1!9;
 		var generalSpeed = 1;
@@ -19,7 +19,10 @@ Trajectories {
 		var fit_speeds = 1!9;
 		var mode = \loose;
 		var movemode = \shot;
-		var buts = [
+		var buts;
+		trajectories = {[]}!9;
+		canvas = view;
+		buts = [
 			[Button().string_("loose").action_({mode=\loose}), columns: 4],
 			[Button().string_("fit").action_({
 				var ttime;
