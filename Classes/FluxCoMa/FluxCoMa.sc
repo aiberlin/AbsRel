@@ -1,9 +1,9 @@
 FluxCoMa {
-	var nflux, server, serverToInfluence, submix;
-	var name="FluxCoMa";
+	var name, nflux, server, serverToInfluence, submix;
+	//var name="FluxCoMa";
 
-	*new { arg nflux, server=nil, serverToInfluence=nil;
-		^this.newCopyArgs(nflux, server, serverToInfluence).init;
+	*new { arg name, nflux, server=nil, serverToInfluence=nil;
+		^this.newCopyArgs(name, nflux, server, serverToInfluence).init;
 	}
 
 	makeUpdatedGui { arg gui, func;
