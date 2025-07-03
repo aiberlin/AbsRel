@@ -23,7 +23,7 @@ FluxCoMa {
 						val = gui.items;
 						changed = (
 							(wouldbe != val) ||
-							(selection.sort != gui.selection.collect {|idx| gui.items[idx]}.sort)
+							(selection.asArray.sort != gui.selection.asArray.collect {|idx| gui.items[idx]}.sort)
 						);
 					} {
 						changed = wouldbe != val;
@@ -64,7 +64,7 @@ FluxCoMa {
 		if (serverToInfluence.isNil) { serverToInfluence = server };
 		server.postln;
 		serverToInfluence.postln;
-		submix = ProxySubmix.new(submixName);
+		submix = ProxySubmix(submixName -> server.name);
 
 		busToFreq = Bus.audio(server, 1);
 		submix.ar(2);
@@ -151,14 +151,16 @@ FluxCoMa {
 			var toRemove = current - selection;
 			var toAdd = selection - current;
 			toAdd.do {|source|
-				if (submix.proxies.asArray.includes(Ndef(source)).not) {
-					submix.addMix(Ndef(source), 1, false);
+				var sourceNdef = Ndef(source -> server.name);
+				if (submix.proxies.asArray.includes(sourceNdef).not) {
+					submix.addMix(sourceNdef, 1, false);
 				};
 			};
 			toRemove.do {|source|
-				"to remove: ".post; source.postln;
-				if (submix.proxies.asArray.includes(Ndef(source))) {
-					submix.removeMix(Ndef(source));
+				var sourceNdef = Ndef(source -> server.name);
+				"to remove: ".post; sourceNdef.postln;
+				if (submix.proxies.asArray.includes(sourceNdef)) {
+					submix.removeMix(sourceNdef);
 				};
 			};
 		};
@@ -186,10 +188,12 @@ FluxCoMa {
 			var toRemove = current - selection;
 			var toAdd = selection - current;
 			toAdd.do {|source|
-				flux.attachMappedRelative(Ndef(source), offset: 24.rand);
+				var sourceNdef = Ndef(source -> serverToInfluence.name);
+				flux.attachMappedRelative(sourceNdef, offset: 24.rand);
 			};
 			toRemove.do {|source|
-				flux.detachMappedRelative(Ndef(source));
+				var sourceNdef = Ndef(source -> serverToInfluence.name);
+				flux.detachMappedRelative(sourceNdef);
 			};
 		};
 		//gui.layout.add(addProxyView);
