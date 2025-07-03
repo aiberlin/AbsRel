@@ -1,5 +1,5 @@
 FluxCoMa {
-	var name, nflux, server, serverToInfluence, submix;
+	var name, nflux, server, serverToInfluence, submix, <node;
 	//var name="FluxCoMa";
 
 	*new { arg name, nflux, server=nil, serverToInfluence=nil;
@@ -56,7 +56,6 @@ FluxCoMa {
 		var oscPath = "/fluxcoma_%".format(defName).asSymbol;
 		var abs2rel, flux;
 		var gui, colors, visualizerView, square, addProxyView, toProxyView, fluxView, ndefView;
-		var node;
 		var vstack, freqScope, busToFreq;
 
 
@@ -78,10 +77,14 @@ FluxCoMa {
 		/*
 		Proxy for listening
 		*/
-		node = NodeProxy.audio(server, 2);
-		node.reshaping = \elastic;
-		node.source = {
-			var isnd = \source.ar(0!2).asArray.sum.equi(prefix: \input);
+		node = NodeProxy.audio(server, 28);
+		//node.reshaping = \elastic;
+		node[0] = {
+			submix.ar.asArray.sum.equi(prefix: \input);
+		};
+		node[1] = \filter -> {|in|
+			//var isnd = submix.ar.asArray.sum;//.equi(prefix: \input);
+			var isnd = in.first;
 			var gate = Amplitude.kr(isnd) > 0.01;
 			var snd = isnd * gate.lag(0.02);
 			// place holder for zooms
@@ -108,7 +111,8 @@ FluxCoMa {
 			out = Latch.kr(out, trg).lag(lag);
 			SendReply.kr(trg, oscPath, out);
 			Out.ar(busToFreq, isnd);
-			out;
+			//K2A.ar(out);
+			Silent.ar(28);
 		};
 		node.set(\source, submix);
 		//EQui(target: node, prefix: \input);
