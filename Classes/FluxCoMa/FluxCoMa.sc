@@ -1,9 +1,9 @@
 FluxCoMa {
-	var nflux, submix;
+	var nflux, server, serverToInfluence, submix;
 	var name="FluxCoMa";
 
-	*new { arg nflux;
-		^this.newCopyArgs(nflux).init;
+	*new { arg nflux, server=nil, serverToInfluence=nil;
+		^this.newCopyArgs(nflux, server, serverToInfluence).init;
 	}
 
 	makeUpdatedGui { arg gui, func;
@@ -58,9 +58,15 @@ FluxCoMa {
 		var gui, colors, visualizerView, square, addProxyView, toProxyView, fluxView, ndefView;
 		var node;
 		var vstack, freqScope, busToFreq;
+
+
+		if (server.isNil) { server = Server.default };
+		if (serverToInfluence.isNil) { serverToInfluence = server };
+		server.postln;
+		serverToInfluence.postln;
 		submix = ProxySubmix.new(submixName);
 
-		busToFreq = Bus.audio(Server.default, 1);
+		busToFreq = Bus.audio(server, 1);
 		submix.ar(2);
 		/*
 		sources.asArray.do {|source|
@@ -72,7 +78,7 @@ FluxCoMa {
 		/*
 		Proxy for listening
 		*/
-		node = NodeProxy.audio(Server.default, 2);
+		node = NodeProxy.audio(server, 2);
 		node.reshaping = \elastic;
 		node.source = {
 			var isnd = \source.ar(0!2).asArray.sum.equi(prefix: \input);
@@ -125,11 +131,18 @@ FluxCoMa {
 		);*/
 
 		addProxyView = this.makeUpdatedGui(ListView(nil, 20@20).items_(
-			Ndef.all['localhost'].activeProxies.asArray.reject {|label| label == submixName}
+			if (Ndef.all[server.name].notNil) {
+				Ndef.all[server.name].activeProxies.asArray.reject {|label| label == submixName}
+			} {
+				[]
+			}
 		).selectionMode = \multi, {
-			//Ndef.all['localhost'].activeProxies.asArray.reject {|label| label == submixName}
-			[Ndef.all['localhost'].activeProxies.asArray.reject {|label| label == submixName},
-				submix.proxies.collect {|proxy| proxy.key }.asArray]
+			if (Ndef.all[server.name].notNil) {
+				[Ndef.all[server.name].activeProxies.asArray.reject {|label| label == submixName},
+					submix.proxies.collect {|proxy| proxy.key }.asArray]
+			} {
+				[[], flux.relativeAttachedObjects.collect { |obj| obj.object.key }.asArray]
+			};
 		});
 		addProxyView.selection = [];
 		addProxyView.selectionAction = {|lv|
@@ -151,11 +164,19 @@ FluxCoMa {
 		};
 
 		toProxyView = this.makeUpdatedGui(ListView(nil, 20@20).items_(
-			Ndef.all['localhost'].activeProxies.asArray.reject {|label| label == submixName}
+			if (Ndef.all[serverToInfluence.name].notNil) {
+				Ndef.all[serverToInfluence.name].activeProxies.asArray.reject {|label| label == submixName}
+			} {
+				[]
+			}
 		).selectionMode = \multi, {
 			//Ndef.all['localhost'].activeProxies.asArray.reject {|label| label == submixName}
-			[Ndef.all['localhost'].activeProxies.asArray.reject {|label| label == submixName},
-				flux.relativeAttachedObjects.collect { |obj| obj.object.key }.asArray]
+			if (Ndef.all[serverToInfluence.name].notNil) {
+				[Ndef.all[serverToInfluence.name].activeProxies.asArray.reject {|label| label == submixName},
+					flux.relativeAttachedObjects.collect { |obj| obj.object.key }.asArray]
+			} {
+				[[], flux.relativeAttachedObjects.collect { |obj| obj.object.key }.asArray]
+			};
 		});
 
 		toProxyView.selection = [];
@@ -238,7 +259,7 @@ FluxCoMa {
 		flux.gui(fluxView);
 
 		vstack = View(fluxView, 400@190).resize_(5);
-		freqScope = FreqScopeView(server:Server.default);
+		freqScope = FreqScopeView(server:server);
 		//freqScope.inBus_(submix.bus);
 		freqScope.inBus_(busToFreq);
 		freqScope.active_(true);
