@@ -131,6 +131,22 @@ Trajectories {
 		}
 	}
 
+
+	toNTMI { arg influxOffset=3;
+		var abs2rel = {NfluxAbs2Rel([0,0])}!9;
+
+		if (NTMI.makeInfluxSource(\trajectories, \trajectories).isNil) {
+			"NTMI is not running, not doing anything".warn;
+			^this;
+		};
+
+		action = { |a, b|
+			var diffs = abs2rel[a].set(b).diff;
+			MKtl(\trajectories).set(\dummy, 0.5);
+			MFdef(\setRelInf).value(diffs.size.collect{|idx| influxOffset+idx}, diffs, NTMI.zoom * NTMI.at(\trajectories).zoom);
+		};
+	}
+
 	mapPairs { arg ...pairs;
 		// pairs of object that accepts the .setUni method + symbol
 		action = {|a, b|
