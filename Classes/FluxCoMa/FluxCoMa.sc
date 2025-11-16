@@ -1,5 +1,5 @@
 FluxCoMa {
-	var name, nflux, server, serverToInfluence, submix, <node;
+	var name, nflux, server, serverToInfluence, submix, <node, <>cbfunc=nil;
 	//var name="FluxCoMa";
 
 	*new { arg name, nflux, server=nil, serverToInfluence=nil;
@@ -50,6 +50,10 @@ FluxCoMa {
 		^submix;
 	}
 
+	callback { arg vals;
+		if (cbfunc.notNil) { cbfunc.(vals) };
+	}
+
 	init {
 		var defName = "fluxcoma_%".format(name).asSymbol;
 		var submixName = "%_sub".format(defName).asSymbol;
@@ -66,7 +70,7 @@ FluxCoMa {
 		submix = ProxySubmix(submixName -> server.name);
 
 		busToFreq = Bus.audio(server, 1);
-		submix.ar(2);
+		submix.ar(1);
 		/*
 		sources.asArray.do {|source|
 			if (submix.proxies.asArray.includes(source).not) {
@@ -96,18 +100,22 @@ FluxCoMa {
 				\z_loudness.kr(0, spec:[0,2])
 			];
 			var rate = \replyrate.kr(50, spec:[1,100,\exp]);
-			var lag = \lag.kr(0.5, spec:[0.01, 5]);
-			var mfccs = FluidMelBands.kr(snd, 10, 40, 10000, normalize:1, windowSize: 128);
+			var lag = \lag.kr(0.01, spec:[0.01, 1]);
+			var mfccs = FluidMelBands.kr(snd, 10, 40, 10000, normalize:1, windowSize: 2048);
 			//var mfccs = FluidMFCC.kr(snd, 10, 40, 1, 40, 10000, windowSize: 1024);
-			var chroma = FluidChroma.kr(snd, 10, 440, 1, windowSize: 128);
-			var shape = FluidSpectralShape.kr(snd, windowSize: 128);
+			var chroma = FluidChroma.kr(snd, 10, 440, 1, windowSize: 2048);
+			var shape = FluidSpectralShape.kr(snd, windowSize: 2048);
 			var out = CombC.kr([
 				(mfccs/RunningMax.kr(mfccs.abs).max(0.0001)),
 				(chroma/RunningMax.kr(chroma.abs).max(0.0001)),
 				(shape/RunningMax.kr(shape.abs).max(0.0001)),
-				FluidLoudness.kr(snd, kWeighting:0, windowSize: 64)[0].dbamp
+				FluidLoudness.kr(snd, kWeighting:0, windowSize: 2048)[0].dbamp
 			].flat, 4, \time.kr(0, spec:[0,4]), \decay.kr(0, spec:[0,1]));
 			var trg = Impulse.kr(rate);
+			//out = Latch.kr(out, trg).lag(lag);
+			//out = MovingAverage.kr(Latch.kr(out, trg), 1+(lag*50));
+			out = LPF.kr(out, \lpf.kr(200, spec:[0.1, 200, \exp]).lag(0.1));
+			out = out * \gain.kr(1, spec:[1,10,\amp]);
 			out = Latch.kr(out, trg).lag(lag);
 			SendReply.kr(trg, oscPath, out);
 			Out.ar(busToFreq, isnd);
@@ -157,7 +165,7 @@ FluxCoMa {
 			toAdd.do {|source|
 				var sourceNdef = Ndef(source -> server.name);
 				if (submix.proxies.asArray.includes(sourceNdef).not) {
-					submix.addMix(sourceNdef, 1, false);
+					submix.addMix(sourceNdef, 1, false, true);
 				};
 			};
 			toRemove.do {|source|
@@ -226,7 +234,7 @@ FluxCoMa {
 		visualizerView.animate = true;
 		fluxView = View();
 		ndefView = GridLayout.rows(
-			*[\zzoom, \z_mfccs, \z_chroma, \z_shape, \z_loudness, \replyrate, \lag, \time].collect {|name|
+			*[\zzoom, \z_mfccs, \z_chroma, \z_shape, \z_loudness, \replyrate, \lag, \lpf, \time].collect {|name|
 				var mview = MView(node.get(name), gui);
 				var spec = node.getSpec(name);
 				mview.putDict(\myspec, spec);
@@ -259,7 +267,7 @@ FluxCoMa {
 		);
 
 		gui.layout = GridLayout.rows(
-			[StaticText().string_("FluxCoMa for %".format(name)).font_(Font("Arial", 24))],
+			[[StaticText().string_("FluxCoMa for %".format(name)).font_(Font("Arial", 24)), columns: 2]],
 			[VLayout(StaticText().string_("Listen to:").font_(Font("Arial", 18)), addProxyView), ndefView],
 			[[visualizerView.minSize_(100@70), columns: 2]],
 			[VLayout(StaticText().string_("Proxies to influence:").font_(Font("Arial", 18)), toProxyView), fluxView],
@@ -294,6 +302,7 @@ FluxCoMa {
 			shape = diffs[20..26] * node.get(\z_shape) * zoom;
 			loudness = diffs[27] * node.get(\z_loudness) * zoom;
 			vals = [mfccs, chroma, shape, loudness].flat;
+			this.callback(vals);
 			colors.do {|c,i|
 				colors[i] = vals[i];
 			};

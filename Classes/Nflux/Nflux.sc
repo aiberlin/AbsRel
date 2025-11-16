@@ -26,10 +26,17 @@ NfluxAbs2Rel {
 	}
 
 	set {|newValue|
+		//"beg setting... to %".format(newValue).postln;
+		if (newValue.isNil) {
+			value = nil;
+			^this;
+		};
+
 		if (value.notNil) {
 			// avoids jumps in diff if value has not been initialized
 			diff = newValue - value;
 		};
+		//"setting... to %".format(newValue).postln;
 		value = newValue;
 	}
 
@@ -51,7 +58,9 @@ NfluxAbs2RelDef : NfluxAbs2Rel {
 			instance = super.new(value).key_(key);
 			all[key] = instance;
 		};
-		instance.set(value);
+		if (value.notNil) {
+			instance.set(value);
+		};
 		^instance;
 	}
 }
