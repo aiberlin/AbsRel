@@ -1,14 +1,36 @@
-Trajectories {
-	var <>action, <trajectories, <canvas;
+TrajectoriesActions {
+	var <actions;
 
-	*new { arg action;
-		^super.newCopyArgs(action).init;
+	*new {
+		^super.new.init;
 	}
 
-
 	init {
-		var win = Window.new("Trajectories", Rect(0,0,400, 800));
-		var view = UserView(win, win.view.bounds.insetBy(5,5));
+		actions = {}!9;
+	}
+
+	put { arg idx, func;
+		if (func.isNil) { func = {} };
+		actions[idx] = func;
+		^actions[idx];
+	}
+
+	at { arg idx;
+		^actions[idx]
+	}
+}
+
+Trajectories {
+	var <>action, <actions, <parent, <trajectories, <canvas;
+
+	*new { arg action, parent;
+		^super.newCopyArgs(action).init(parent);
+	}
+
+	init { arg parent;
+		var win = parent ?? { Window.new("Trajectories", Rect(0,0,400, 800)) };
+		var winview = if (win.isKindOf(Window)) { win.view } { win };
+		var view = UserView(win, winview.bounds.insetBy(5,5));
 		var colors = {Color.rand}!9;
 		var speeds = 1!9;
 		var generalSpeed = 1;
@@ -20,7 +42,10 @@ Trajectories {
 		var mode = \loose;
 		var movemode = \shot;
 		var buts;
+		ms[0].background = Color.red;
+
 		trajectories = {[]}!9;
+		actions = TrajectoriesActions();
 		canvas = view;
 		buts = [
 			[Button().string_("loose").action_({mode=\loose}), columns: 4],
@@ -75,6 +100,7 @@ Trajectories {
 					endval = trajectories[tr][pos+1 % trajectories[tr].size];
 					floatPos = ((loops[tr] - pos).linlin(0, 1, initval, endval));
 					action.value(tr, floatPos/[view.bounds.width, view.bounds.height]);
+					actions[tr].value(floatPos/[view.bounds.width, view.bounds.height]);
 					//~abs2rel.set([~trajectory[pos][0]/v.bounds.width-0.5, ~trajectory[pos][1]/v.bounds.height-0.5]);
 					//~abs2rel.diff.postln;
 					//n.setRel(0, ~abs2rel.diff[0].clip(-0.1, 0.1), 1, ~abs2rel.diff[1].clip(-0.1, 0.1));
@@ -95,7 +121,7 @@ Trajectories {
 			mouse = false;
 			loops[track]=0
 		};
-		win.view.keyDownAction = {|uv, key|
+		winview.keyDownAction = {|uv, key|
 			key = key.asInteger-48;
 			if (mouse.not and: {key > 0}) {
 				ms[track].background =  nil;
