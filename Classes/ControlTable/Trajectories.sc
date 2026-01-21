@@ -209,4 +209,24 @@ Trajectories {
 			};
 		};
 	}
+
+	prGuessControls { arg proxy;
+		var x, y;
+		x = proxy.controlKeys.select {|key| key.asString.endsWith("_x") or: {key == \x} }.first;
+		y = proxy.controlKeys.select {|key| key.asString.endsWith("_y") or: {key == \y} }.first;
+		^[x,y];
+	}
+
+	attach { arg idx, proxy, x=nil, y=nil;
+		if (x.isNil and: {y.isNil}) {
+			var controls = this.prGuessControls(proxy);
+			x = controls[0];
+			y = controls[1];
+		};
+		if (x.notNil and: {y.notNil}) {
+			actions[idx] = {|vals| proxy.setUni(x, vals[0], y, vals[1]) };
+		} {
+			"Trajectories: can't find control names for X and Y coordinates".warn;
+		};
+	}
 }
