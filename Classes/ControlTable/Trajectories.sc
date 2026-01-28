@@ -21,7 +21,7 @@ TrajectoriesActions {
 }
 
 Trajectories {
-	var <>action, <actions, <parent, <trajectories, <canvas;
+	var <>action, <actions, <parent, <trajectories, <canvas, <worker, poss;
 
 	*new { arg action, parent;
 		^super.newCopyArgs(action).init(parent);
@@ -41,10 +41,11 @@ Trajectories {
 		var fit_speeds = 1!9;
 		var mode = \loose;
 		var movemode = \shot;
-		var buts;
+		var buts, lastSize = [100,100];
 		ms[0].background = Color.red;
 
 		trajectories = {[]}!9;
+		poss = 0!9;
 		actions = TrajectoriesActions();
 		canvas = view;
 		buts = [
@@ -63,6 +64,54 @@ Trajectories {
 			}), columns: 5]
 		];
 
+		worker = SkipJack({
+			trajectories.size.do {|tr|
+				var last;//, pos=0;
+				var aspeeds = speeds;
+				var initval, endval, floatPos;
+				if (mode == \fit) {
+					aspeeds = fit_speeds;
+				};
+				if (trajectories[tr].size > 0) {
+					if (mouse and: {tr == track}) {
+						poss[tr] = trajectories[tr].size-1
+					} {
+						if (movemode == \pingpong) {
+							poss[tr] = (loops[tr] - (trajectories[tr].size-1)).abs.asInteger;
+							loops[tr] = ((loops[tr] + (aspeeds[tr] * generalSpeed)) % (trajectories[tr].size*2-2));
+						} {
+							poss[tr] = loops[tr].asInteger.abs;
+							loops[tr] = ((loops[tr] + (aspeeds[tr] * generalSpeed)) % trajectories[tr].size);
+						};
+					};
+
+					last = trajectories[tr][0];
+					/*trajectories[tr][1..].do {|xy,idx|
+						//xy.postln;
+						Pen.moveTo(Point(last[0], last[1]));
+						Pen.lineTo(Point(xy[0], xy[1]));
+						Pen.strokeColor_(colors[tr+5%colors.size]);
+						Pen.stroke;
+						last=xy;
+					};*/
+
+					if (view.bounds.notNil) {
+						lastSize = [view.bounds.width, view.bounds.height];
+					};
+
+					initval = trajectories[tr][poss[tr]];
+					endval = trajectories[tr][poss[tr]+1 % trajectories[tr].size];
+					floatPos = ((loops[tr] - poss[tr]).linlin(0, 1, initval, endval));
+					action.value(tr, floatPos/lastSize);
+					actions[tr].value(floatPos/lastSize);
+
+					//Pen.addOval(Rect(floatPos[0]-5, floatPos[1]-5, 10, 10));
+					//Pen.fillColor_(colors[tr]);
+					//Pen.fill;
+				};
+			};
+		}, 1/30);
+
 		//var ms = MultiSliderView(win);
 		view.resize = 5;
 		view.background_(Color.rand);
@@ -75,35 +124,17 @@ Trajectories {
 					aspeeds = fit_speeds;
 				};
 				if (trajectories[tr].size > 0) {
-					if (mouse and: {tr == track}) {
-						pos = trajectories[tr].size-1
-					} {
-						if (movemode == \pingpong) {
-							pos = (loops[tr] - (trajectories[tr].size-1)).abs.asInteger;
-							loops[tr] = ((loops[tr] + (aspeeds[tr] * generalSpeed)) % (trajectories[tr].size*2-2));
-						} {
-							pos = loops[tr].asInteger.abs;
-							loops[tr] = ((loops[tr] + (aspeeds[tr] * generalSpeed)) % trajectories[tr].size);
-						};
-					};
-
 					last = trajectories[tr][0];
 					trajectories[tr][1..].do {|xy,idx|
-						//xy.postln;
 						Pen.moveTo(Point(last[0], last[1]));
 						Pen.lineTo(Point(xy[0], xy[1]));
 						Pen.strokeColor_(colors[tr+5%colors.size]);
 						Pen.stroke;
 						last=xy;
 					};
-					initval = trajectories[tr][pos];
-					endval = trajectories[tr][pos+1 % trajectories[tr].size];
-					floatPos = ((loops[tr] - pos).linlin(0, 1, initval, endval));
-					action.value(tr, floatPos/[view.bounds.width, view.bounds.height]);
-					actions[tr].value(floatPos/[view.bounds.width, view.bounds.height]);
-					//~abs2rel.set([~trajectory[pos][0]/v.bounds.width-0.5, ~trajectory[pos][1]/v.bounds.height-0.5]);
-					//~abs2rel.diff.postln;
-					//n.setRel(0, ~abs2rel.diff[0].clip(-0.1, 0.1), 1, ~abs2rel.diff[1].clip(-0.1, 0.1));
+					initval = trajectories[tr][poss[tr]];
+					endval = trajectories[tr][poss[tr]+1 % trajectories[tr].size];
+					floatPos = ((loops[tr] - poss[tr]).linlin(0, 1, initval, endval));
 					Pen.addOval(Rect(floatPos[0]-5, floatPos[1]-5, 10, 10));
 					Pen.fillColor_(colors[tr]);
 					Pen.fill;
@@ -133,6 +164,7 @@ Trajectories {
 			//track.postln;
 		};
 		view.mouseMoveAction={|uv, x,y|
+			this.start;
 			if (mouse) {
 				//track.postln;
 				trajectories[track] = trajectories[track].add([x,y]);
@@ -147,6 +179,14 @@ Trajectories {
 			]
 		);//, HLayout(*ms));
 		win.front;
+	}
+
+	start {
+		worker.start;
+	}
+
+	stop {
+		worker.stop;
 	}
 
 	toNflux { arg nflux;
